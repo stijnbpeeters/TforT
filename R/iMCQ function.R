@@ -1,5 +1,10 @@
-#@iMCQ
-#All costprices following the costing manual excluding medication
+#' A function to calculate costs based on the iMCQ
+#' @param dat the iMCQ input datafile which has to contain the following variables, following the order of the iMCQ questions: n_GP (Amount of appointments with GP), n_SW (Amount of appointments with social worker), n_FYSIO (Amount of appointments with fysiotherapist), n_ERGOT (Amount of appointments with ergotherapist), n_LOGOP (Amount of appointments with logopedist), n_DIETI (Amount of appointments with dietician), n_HOMEO (Amount of appointments with homeopathist),n_PSYCH (Amount of appointments with psychologist), n_OCCUP (Amount of appointments with occupational physician), n_DOMES (Amount of weeks of domestic care help (homecare)), h_DOMES (Amount of hours of domestic care help (homecare)), n_CAREH (Amount of weeks of care at home (homecare)), h_CAREH (Amount of hours of care at home (homecare)), n_NURSEH (Amount of weeks of nursing at home (homecare)), h_NURSEH (Amount of hours of nursing at home (homecare)), n_EMERG (Amount of emergency care visits), n_AMBUL (Amount of ambulance usage), n_POLI (Amount of policlinic visits), n_DAYC_HOSP (Amount of daycare treatments in hospital), n_DAYC_CARE (Amount of daycare treatments are carecenters), n_DAYC_REVA (Amount of daycare treatments in revalidation centers), n_DAYC_PSYC (Amount of daycare in psychiatric institutions), n_ADM_HOSP (Amount of days admitted to hospital), n_ADM_CARE (Amount of days admitted to care centers), n_ADM_REVA (Amount of days admitted to revalidation centers), n_ADM_PSYC (Amount of days admitted to psychiatric institutions), n_INF_CARE (Amount of weeks of informal care), h_INF_CARE (Amount of hours of informal care)
+#' @param reference_year Reference year for calculating the costs. The costprices are indexed for inflation. Only one year is possible.
+#' @keywords iMCQ, cost of healthcare
+#' @export func_iMCQ
+
+#All costprices following the costing manual excluding medication'
 
 func_iMCQ <- function(dat, reference_year){
 
