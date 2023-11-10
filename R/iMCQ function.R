@@ -1,3 +1,4 @@
+#iMCQ function
 #All costprices following the costing manual excluding medication
 
 func_iMCQ <- function(dat, referentiejaar){
