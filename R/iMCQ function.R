@@ -88,11 +88,11 @@ func_iMCQ <- function(dat, reference_year){
   general_col_names <- col_names[!startsWith(col_names, "h") &
                                    col_names != "n_DOMES" &
                                    col_names != "n_CAREH" &
-                                   col_names != "n_EMERG" &
+                                   col_names != "n_NURSEH" &
                                    col_names != "n_INF_CARE"]
 
   new_general_col_names <- gsub("n", "k", general_col_names)
-  spec_col_names <- c("n_DOMES, h_DOMES, n_CAREH, h_CAREH, n_EMERG, h_EMERG, n_INF_CARE, h_INF_CARE")
+  spec_col_names <- c("n_DOMES, h_DOMES, n_CAREH, h_CAREH, n_NURSEH, h_NURSEH, n_INF_CARE, h_INF_CARE")
 
 #Define general costprices
 
