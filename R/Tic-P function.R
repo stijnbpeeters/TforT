@@ -1,6 +1,6 @@
 #All costprices following the costing manual excluding medication'
 
-func_iMCQ <- function(dat, reference_year){
+func_ticP <- function(dat, reference_year){
 
   #Import required libraries
   require("dplyr")
@@ -10,7 +10,7 @@ func_iMCQ <- function(dat, reference_year){
 
   #Import datafile reference prices
 
-  df_ref_prices <- data.frame(openxlsx::read.xlsx(xlsxFile = here("data/Referentieprijzen hoofdstuk 4.xlsx"), sheet = "tab_Tic-P"))
+  df_ref_prices <- data.frame(openxlsx::read.xlsx(xlsxFile = here("~/TforT/TforT-package/Data/Referentieprijzen hoofdstuk 4.xlsx"), sheet = "tab_Tic-P"))
 
   #Download inflation index
 
@@ -90,20 +90,20 @@ func_iMCQ <- function(dat, reference_year){
 
   #Define general costprices
 
-  general_names <- c("Huisarts, visite gemiddeld",
+  general_names <- c("Huisarts, consult gemiddeld",
                      "Contact maatschappelijk werk",
                      "Fysiotherapie (per zitting)",
                      "Ergotherapie (per zitting)",
                      "Logopedie (per zitting)",
                      "Dieetadvisering (per zitting)",
-                     "Contact vrijgevestigd zorgverlener in de basis GGZ",
+                     "Homeopathie (Contact vrijgevestigd zorgverlener in de basis GGZ)",
                      "Contact zorgverlener in de generalistische basis GGZ-instellingen",
                      "Contact vrijgevestigd zorgverlener in de basis GGZ",
                      "Consult zorgverlener in de PAAZ/PUK",
-                     "Consult zorgverlener in de specialistische GGZ-instellingen"
-                     "Bedrijfsarts, visite gemiddeld",
+                     "Consult zorgverlener in de specialistische GGZ-instellingen",
+                     "POH-GGZ, Groepsconsult",
+                     "Bedrijfsarts, consult gemiddeld",
                      "Spoedeisende hulp",
-                     "Ambulancerit, gewogen gemiddelde",
                      "Polikliniekbezoek, ziekenhuis",
                      "Dagbehandeling, ziekenhuis",
                      "Dagbesteding woon/zorgcentrum, per dagdeel",
@@ -134,7 +134,6 @@ func_iMCQ <- function(dat, reference_year){
   dat$k_DOMES <- df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Huishoudelijke hulp thuis"] * dat$n_DOMES *dat$h_DOMES + dat$n_DOMES * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Reiskosten, per bezoek"]
   dat$k_CAREH <- df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Persoonlijke verzorging thuis"] * dat$n_CAREH * dat$h_CAREH + dat$n_CAREH * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Reiskosten, per bezoek"]
   dat$k_NURSEH <- df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Verpleging thuis, per uur"] * dat$n_NURSEH * dat$h_NURSEH + dat$n_NURSEH * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Reiskosten, per bezoek"]
-  dat$k_INF_CARE <- df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Vervangingskosten voor huishoudelijk werk"] * dat$n_INF_CARE * dat$h_INF_CARE
 
   #Calculate the cost categoreies
   #Direct medical costs without medication
@@ -143,11 +142,6 @@ func_iMCQ <- function(dat, reference_year){
   dat <- dat %>%
     rowwise() %>%
     mutate(direct_medical_costs_no_medication = sum(across(Direct_med_costs_cols)))
-
-
-  #Informal care costs
-
-  dat$informal_care_costs <- dat$k_INF_CARE
 
 
   #Return the dataset

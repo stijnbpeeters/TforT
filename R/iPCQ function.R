@@ -12,7 +12,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 
 #Import datafile reference prices
 
-  df_ref_prices <- data.frame(openxlsx::read.xlsx(xlsxFile = here("data/Referentieprijzen hoofdstuk 4.xlsx"), sheet = "tab_iPCQ"))
+  df_ref_prices <- data.frame(openxlsx::read.xlsx(xlsxFile = here("~/TforT/TforT-package/Data/Referentieprijzen hoofdstuk 4.xlsx"), sheet = "tab_iPCQ"))
 
 
 
@@ -35,7 +35,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 #Inflation index new
 
   cbs_inflation_new <- cbs_inflation %>%
-    filter(Perioden_label == referentiejaar) %>%
+    filter(Perioden_label == reference_year) %>%
     pull(CPI_1)
 
 #Mutate inflation index across reference price
@@ -69,8 +69,8 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
                                        "date_of_this_measurement",
                                        "hours_work_week",
                                        "days_work_week",
-                                       "sick_longer_than_4_weeks",
                                        "days_sick",
+                                       "sick_longer_than_4_weeks",
                                        "date_start_sickness",
                                        "days_suffering_from_problems",
                                        "rate_of_work",
@@ -107,9 +107,9 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 #Calculating Absenteeism
 #Short absenteeism
 
-    if(dat$sick_longer_than_4_weeks == 0){
+    if(any(dat$sick_longer_than_4_weeks == 0)){
 
-      dat$abs_short = hours_per_day * days_sick * diff_this_prior_consider_recall * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende "]
+      dat$abs_short = hours_per_day * dat$days_sick * diff_this_prior_consider_recall * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende "]
 
 #Long absenteeism
 #Situation 1: Duration of absence is shorter than the friction period
