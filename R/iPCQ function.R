@@ -35,8 +35,8 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 #Inflation index new
 
   cbs_inflation_new <- cbs_inflation %>%
-    filter(Perioden_label == reference_year) %>%
-    pull(CPI_1)
+    filter(Perioden_label == reference_year) %>% #Dadelijk aanpassen
+     pull(CPI_1)
 
 #Mutate inflation index across reference price
 
@@ -52,7 +52,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
     filter(Perioden_freq == "Y",
            Bedrijfskenmerken %in% c("T001081")) %>%
     mutate(Year = lubridate::year(Perioden_Date)) %>%
-    mutate(Friction_period_days  = yeardays / (VervuldeVacatures_3 / OpenstaandeVacatures_1) + 4 * 7) %>%
+    mutate(Friction_period_days  = yeardays/ (VervuldeVacatures_3 / OpenstaandeVacatures_1) + 4 * 7) %>% #Aanpassen dadelijk
     select(Year, Friction_period_days) %>%
     filter(Year == 2022) %>%
     pull(Friction_period_days)
@@ -108,8 +108,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 #Short absenteeism
 
     if(any(dat$sick_longer_than_4_weeks == 0)){
-
-      dat$abs_short = hours_per_day * dat$days_sick * diff_this_prior_consider_recall * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende "]
+    dat$abs_short <-  hours_per_day * dat$days_sick * diff_this_prior_consider_recall * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
 
 #Long absenteeism
 #Situation 1: Duration of absence is shorter than the friction period
@@ -152,7 +151,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 
 #Presenteeism
 
-    dat$presenteeism <-  dat$days_suffering_from_problems * (1 - (rate_of_work/10)) * hours_per_day * diff_this_prior_consider_recall * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
+    dat$presenteeism <-  dat$days_suffering_from_problems * (1 - (dat$rate_of_work/10)) * hours_per_day * diff_this_prior_consider_recall * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
 
 
 #Unpaid work
