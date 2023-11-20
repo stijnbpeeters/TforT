@@ -1,7 +1,7 @@
 #@iPCQ
 #All costprices following the costing manual
 
-func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25){
+func_iPCQ <- function(dat = dat, reference_year, yeardays = 365.25){
 
 #Import required packages
   require("dplyr")
@@ -12,7 +12,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 
 #Import datafile reference prices
 
-  df_ref_prices <- data.frame(openxlsx::read.xlsx(xlsxFile = here("~/TforT/TforT-package/Data/Referentieprijzen hoofdstuk 4.xlsx"), sheet = "tab_iPCQ"))
+  df_ref_prices <- data.frame(openxlsx::read.xlsx(xlsxFile = here::here("~/TforT/TforT-package/Data/Referentieprijzen hoofdstuk 4.xlsx"), sheet = "tab_iPCQ"))
 
 
 
@@ -35,8 +35,8 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 #Inflation index new
 
   cbs_inflation_new <- cbs_inflation %>%
-    filter(Perioden_label == reference_year) %>% #Dadelijk aanpassen
-     pull(CPI_1)
+    filter(Perioden_label == reference_year) %>%
+    pull(CPI_1)
 
 #Mutate inflation index across reference price
 
@@ -52,7 +52,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
     filter(Perioden_freq == "Y",
            Bedrijfskenmerken %in% c("T001081")) %>%
     mutate(Year = lubridate::year(Perioden_Date)) %>%
-    mutate(Friction_period_days  = yeardays/ (VervuldeVacatures_3 / OpenstaandeVacatures_1) + 4 * 7) %>% #Aanpassen dadelijk
+    mutate(Friction_period_days  = 365.25/ (VervuldeVacatures_3 / OpenstaandeVacatures_1) + 4 * 7) %>%
     select(Year, Friction_period_days) %>%
     filter(Year == 2022) %>%
     pull(Friction_period_days)
@@ -61,7 +61,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 
 #Calculations in case of prior measurement
 
-  if(first_measurement == F){
+
 
 #Names of columns that have to be included in data file (dat)
 
@@ -87,7 +87,7 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 
     diff_this_prior_days <- as.numeric(difftime(dat$date_of_this_measurement, dat$date_of_prior_measurement, units = "days"))
     diff_this_prior_weeks <- as.numeric(difftime(dat$date_of_this_measurement, dat$date_of_prior_measurement, units = "weeks"))
-    diff_this_prior_consider_recall <- diff_this_prior_weeks / 4
+    diff_this_prior_consider_recall <- diff_this_prior_weeks/4
 
 
 #Calculate difference between date start of sickness and date of this measurement
@@ -104,133 +104,67 @@ func_iPCQ <- function(dat, reference_year, first_measurement, yeardays = 365.25)
 
     hours_per_day <- dat$hours_work_week / dat$days_work_week
 
+#Productiviteitskosten
+    kost_prod <- df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
+
 #Calculating Absenteeism
 #Short absenteeism
 
-    if(any(dat$sick_longer_than_4_weeks == 0)){
-    dat$abs_short <-  hours_per_day * dat$days_sick * diff_this_prior_consider_recall * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
+dat$abs_short <- ifelse(dat$sick_longer_than_4_weeks == 0,
+                        (dat$hours_work_week/dat$days_work_week) * dat$days_sick * kost_prod * diff_this_prior_consider_recall,
+                        0)
 
 #Long absenteeism
-#Situation 1: Duration of absence is shorter than the friction period
+#Situation 1a: Duration of absence is shorter than the friction period and the start of the sickness starts before the recall period date
+abs_long_1a <- ifelse(dat$sick_longer_than_4_weeks == 1 & cbs_friction_period_days >= diff_this_start_days & diff_this_start_days >= diff_this_prior_days,
+                          dat$hours_work_week * diff_this_prior_weeks * kost_prod,
+                          0)
 
-    }else{
-      if(cbs_friction_period_days >= diff_this_start_days){
-
-#Situation 1A: Difftime start sickness-this measurement => difftime prior measurement - this measurement
-
-         if(diff_this_start_days >= diff_this_prior_days){
-          dat$abs_long <- dat$hours_work_week * diff_this_prior_weeks * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
-
-#Situation 1B: Difftime start sickness-this measurement < difftime prior measuremnt - this measurement
-
-        }else{
-          dat$abs_long <- dat$hours_work_week * diff_this_start_weeks * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
-        }
-
-#Sitation 2: Duration of absence is longer than the friction period
-
-      }else{
+#Situation 1B: Duration of absence is shorter than the friction period and the start of the sickness starts after the recall period date
+abs_long_1b <- ifelse(dat$sick_longer_than_4_weeks == 1 & cbs_friction_period_days >= diff_this_start_days & diff_this_prior_days > diff_this_start_days,
+                      dat$hours_work_week * diff_this_start_weeks * kost_prod,
+                      0)
 
 #Situation 2A: Duration of absence is longer than the friction period and the whole friction period is before the prior measurement
+abs_long_2a <- ifelse(dat$sick_longer_than_4_weeks == 1 & diff_this_start_days > cbs_friction_period_days & diff_prior_start_days >= cbs_friction_period_days,
+                      0,
+                      0)
 
-      if(diff_prior_start_weeks >= cbs_friction_period_weeks){
-      dat$abs_long <- 0
-
-#Situation 2B: Duration of absence is longer than the friction period and the whole friction period is after the prior measurement
-
-      }else if(diff_this_prior_weeks >= cbs_friction_period_weeks){
-        dat$abs_long <- cbs_friction_period_weeks * dat$hours_work_week * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
-
-#Situation 2C: Duration of absence is longer than the friction period, and the fricition is partly after the prior measurement
-
-      }else{
-        dat$abs_long <- (cbs_friction_period_weeks - diff_prior_start_weeks) * dat$hours_work_week * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
-      }
-      }
-    }
-
-#Presenteeism
-
-    dat$presenteeism <-  dat$days_suffering_from_problems * (1 - (dat$rate_of_work/10)) * hours_per_day * diff_this_prior_consider_recall * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
+#Situation 2B: Duration of absence is longer than the friction period and the  friction period is (partly) between the two measurements
+abs_long_2b <- ifelse(dat$sick_longer_than_4_weeks == 1 & diff_this_start_days > cbs_friction_period_days & cbs_friction_period_days - diff_prior_start_days > 0,
+                      (cbs_friction_period_weeks - diff_prior_start_weeks) * dat$hours_work_week * kost_prod,
+                      0)
 
 
-#Unpaid work
+#Difference in time between the start sickness and timepoint in days
 
-    dat$unpaid_work <- dat$days_less_unpaid_work * dat$average_hours_unpaid_work * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Vervangingskosten per uur"] * diff_this_prior_consider_recall
+dat$difftime_days_sick <- diff_this_start_days
 
+#Difference in time between the two timepoints
 
-#Calculations in case of no prior measurement
-#Names of columns that have to be included in data file (dat)
+dat$difftime_days_recall <- diff_this_prior_days
 
-  }else{
-    col_names_first_measurement_T <- c("recall_period_in_weeks",
-                                       "date_of_this_measurement",
-                                       "hours_work_week",
-                                       "days_work_week",
-                                       "sick_longer_than_4_weeks",
-                                       "days_sick",
-                                       "date_start_sickness",
-                                       "days_suffering_from_problems",
-                                       "rate_of_work",
-                                       "days_less_unpaid_work",
-                                       "average_hours_unpaid work")
+#long absenteeism
 
-#Check for the presence of required columns in the input dataset
+dat$abs_long <- abs_long_1a + abs_long_1b + abs_long_2a + abs_long_2b
 
-    if(length(setdiff(col_names_first_measurement_T, names(dat))) > 0) stop(cat(
-      "All iPCQ columns need to be present in dat. The following are missing:",
-      setdiff(col_names, names(dat))))
+#Absenteeism
 
-#Calculate difference between date start of sickness and date of this measurement
+dat$absenteeism <- dat$abs_short + dat$abs_long
 
-    diff_this_start_days <- as.numeric(difftime(dat$date_of_this_measurement, dat$date_start_sickness, units = "days"))
-    diff_this_start_weeks <- as.numeric(difftime(dat$date_of_this_measurement, dat$date_start_sickness, units = "weeks"))
+#Calculations for Presenteeism
 
+dat$presenteeism <- dat$days_suffering_from_problems * (1 - (dat$rate_of_work/10)) * hours_per_day * diff_this_prior_consider_recall * kost_prod
 
-#Calculate  hours per day
+#Calculations for Unpaid work
 
-    hours_per_day <- dat$hours_work_week / dat$days_work_week
+dat$unpaid_work <- dat$days_less_unpaid_work * dat$average_hours_unpaid_work * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Vervangingskosten per uur"] * diff_this_prior_consider_recall
 
-#Short absenteeism
-
-    if(dat$sick_longer_than_4_weeks == 0){
-
-      dat$abs_short = hours_per_day * dat$days_sick * dat$recall_period_in_weeks * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende "]
-
-
-#Situation 1 Duration of absence is shorter than friction period
-
-    }else{
-      if(cbs_friction_period_weeks >= diff_this_start_weeks){
-        dat$abs_long = dat$hours_work_week * dat$recall_period_in_weeks * dat$df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende "]
-
-#Situation 1 Duration of absence is longer than friction period
-
-      }else{
-        if(cbs_friction_period_weeks >= dat$recall_period_in_weeks){
-        dat$abs_long = dat$hours_work_week * dat$recall_period_in_weeks * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende "]
-        }else{
-      dat$abs_long = dat$hours_work_week *cbs_friction_period_weeks * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende "]
-    }
-    }
+dat
 }
 
-#Presenteeism
-
-    dat$presenteeism <-  dat$days_suffering_from_problems * (1 - (rate_of_work/10)) * hours_per_day * (dat$recall_period_in_weeks/4) * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Productiviteitskosten per uur per betaald werkende"]
 
 
-#Unpaid work
-
-    dat$unpaid_work <- dat$days_less_unpaid_work * dat$average_hours_unpaid_work * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Vervangingskosten per uur"] * (dat$recall_period_in_weeks/4)
-
-
-  }
-
-#Return dat
-  dat
-
-    }
 
 
 
