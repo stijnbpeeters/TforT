@@ -1,7 +1,7 @@
 #@iPCQ
 #All costprices following the costing manual
 
-func_iPCQ <- function(dat = dat, reference_year, yeardays = 365.25){
+func_iPCQ <- function(dat, reference_year, yeardays = 365.25){
 
 #Import required packages
   require("dplyr")
@@ -52,9 +52,9 @@ func_iPCQ <- function(dat = dat, reference_year, yeardays = 365.25){
     filter(Perioden_freq == "Y",
            Bedrijfskenmerken %in% c("T001081")) %>%
     mutate(Year = lubridate::year(Perioden_Date)) %>%
-    mutate(Friction_period_days  = 365.25/ (VervuldeVacatures_3 / OpenstaandeVacatures_1) + 4 * 7) %>%
+    mutate(Friction_period_days  = yeardays/ (VervuldeVacatures_3 / OpenstaandeVacatures_1) + 4 * 7) %>%
     select(Year, Friction_period_days) %>%
-    filter(Year == 2022) %>%
+    filter(Year == reference_year) %>%
     pull(Friction_period_days)
 
   cbs_friction_period_weeks <- cbs_friction_period_days / 7
