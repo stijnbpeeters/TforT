@@ -120,12 +120,13 @@ func_ticP <- function(dat, reference_year){
 
   #Calculate costs for the general outcomes
 
-  costs_general <- as.data.frame(mapply(`*`, dat[general_col_names], general_costprices))
+  costs_general <- data.frame(mapply(`*`, dat[general_col_names], general_costprices, SIMPLIFY = FALSE))
+
 
   colnames(costs_general) <- new_general_col_names
 
 
-  #Cbind with dat
+  #Bind with dat
 
   dat <- cbind(dat,costs_general)
 

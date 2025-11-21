@@ -1,13 +1,94 @@
 #@iPCQ
 #All costprices following the costing manual
 
-func_iPCQ <- function(dat, reference_year, yeardays = 365.25){
+func_iPCQ <- function(dat, recall_weeks, reference_year, yeardays = 365.25){
 
 #Import required packages
   require("dplyr")
   require("cbsodataR")
   require("tidyverse")
   require("here")
+  require("tatooheene")
+
+
+
+# Load in friction period function ----------------------------------------
+
+  # Download new dataset with years
+  df_fp <- cbsodataR::cbs_get_data("80472ned") %>%
+    cbsodataR::cbs_add_label_columns() %>%
+    cbsodataR::cbs_add_date_column() %>%
+    dplyr::select(!OntstaneVacatures_2) %>%
+    dplyr::filter(Perioden_freq == "Y",
+                  Bedrijfskenmerken %in% c("T001081")) %>%
+    dplyr::mutate(Year = lubridate::year(Perioden_Date),
+                  Friction_period_days = 365.25/(VervuldeVacatures_3/OpenstaandeVacatures_1) + 28,
+                  Friction_period_weeks = Friction_period_days/7) %>%
+    dplyr::distinct(Year,
+                    VervuldeVacatures_3,
+                    OpenstaandeVacatures_1,
+                    Friction_period_days,
+                    Friction_period_weeks) %>%
+    dplyr::rename("Filled vacancies" = "VervuldeVacatures_3",
+                  "Open vacancies" = "OpenstaandeVacatures_1",
+                  "Friction period in days" = "Friction_period_days",
+                  "Friction period in weeks" = "Friction_period_weeks") %>%
+    dplyr::mutate("Friction period days average over 5 years" = zoo::rollmean(`Friction period in days`, k=5, align = "right", fill = NA),
+                  "Friction period weeks average over 5 years" = zoo::rollmean(`Friction period in weeks`, k=5, align="right", fill = NA))
+
+
+
+  friction_period <- function(
+    year   = NULL,
+    units  = "weeks",
+    avg    = "5yr",
+    output = c("tibble", "value"),
+    data   = df_fp
+  ) {
+    output <- match.arg(output, c("tibble", "value"))
+
+    # Validate units/avg
+    units <- match.arg(units, c("days", "weeks"), several.ok = TRUE)
+    avg   <- match.arg(avg,   c("1yr", "5yr"),   several.ok = TRUE)
+
+    # Column map
+    col_map <- c(
+      "days_1yr"  = "Friction period in days",
+      "weeks_1yr" = "Friction period in weeks",
+      "days_5yr"  = "Friction period days average over 5 years",
+      "weeks_5yr" = "Friction period weeks average over 5 years"
+    )
+
+    # Build requested columns
+    combos   <- as.vector(outer(units, avg, paste, sep = "_"))
+    sel_cols <- unname(col_map[combos])
+
+    # Validate years
+    if (!is.null(year)) {
+      if (!is.numeric(year) || any(is.na(year))) {
+        stop("`year` must be numeric (e.g., 2019 or 2018:2020).", call. = FALSE)
+      }
+      yr_min <- min(data$Year, na.rm = TRUE)
+      yr_max <- max(data$Year, na.rm = TRUE)
+      if (any(year < yr_min | year > yr_max)) {
+        stop(sprintf("Year out of range. Choose between %s and %s.", yr_min, yr_max), call. = FALSE)
+      }
+    }
+
+    # Filter and select
+    df <- data
+    if (!is.null(year)) df <- dplyr::filter(df, Year %in% year)
+    out <- dplyr::select(df, Year = Year, dplyr::all_of(sel_cols))
+
+    if (output == "tibble") return(out)
+
+    # output == "value": require exactly one year and one column
+    if (nrow(out) != 1 || ncol(out) != 2) {
+      stop('For `output = "value"`, provide exactly one `year` and a single `(units, avg)` combination.', call. = FALSE)
+    }
+    val <- dplyr::pull(out, 2)
+    unname(as.numeric(val))
+  }
 
 
 #Import datafile reference prices
@@ -46,18 +127,12 @@ func_iPCQ <- function(dat, reference_year, yeardays = 365.25){
 
 #Calculate friction period
 
-  cbs_friction_period_days <- cbsodataR::cbs_get_data("80472NED") %>%
-    cbsodataR::cbs_add_label_columns() %>%
-    cbsodataR::cbs_add_date_column() %>%
-    filter(Perioden_freq == "Y",
-           Bedrijfskenmerken %in% c("T001081")) %>%
-    mutate(Year = lubridate::year(Perioden_Date)) %>%
-    mutate(Friction_period_days  = yeardays/ (VervuldeVacatures_3 / OpenstaandeVacatures_1) + 4 * 7) %>%
-    select(Year, Friction_period_days) %>%
-    filter(Year == reference_year) %>%
-    pull(Friction_period_days)
+  cbs_friction_period_weeks <- friction_period(year = reference_year,
+                                               output = "value")
 
-  cbs_friction_period_weeks <- cbs_friction_period_days / 7
+  cbs_friction_period_days <- friction_period(year = reference_year,
+                                              output = "value",
+                                              units = "days")
 
 #Calculations in case of prior measurement
 
@@ -87,7 +162,7 @@ func_iPCQ <- function(dat, reference_year, yeardays = 365.25){
 
     diff_this_prior_days <- as.numeric(difftime(dat$date_of_this_measurement, dat$date_of_prior_measurement, units = "days"))
     diff_this_prior_weeks <- as.numeric(difftime(dat$date_of_this_measurement, dat$date_of_prior_measurement, units = "weeks"))
-    diff_this_prior_consider_recall <- diff_this_prior_weeks/4
+    diff_this_prior_consider_recall <- recall_weeks/4
 
 
 #Calculate difference between date start of sickness and date of this measurement
@@ -150,7 +225,7 @@ dat$abs_long <- abs_long_1a + abs_long_1b + abs_long_2a + abs_long_2b
 
 #Absenteeism
 
-dat$absenteeism <- dat$abs_short + dat$abs_long
+dat$absenteeism <- dat$abs_short +dat$abs_long
 
 #Calculations for Presenteeism
 
@@ -160,7 +235,9 @@ dat$presenteeism <- dat$days_suffering_from_problems * (1 - (dat$rate_of_work/10
 
 dat$unpaid_work <- dat$days_less_unpaid_work * dat$average_hours_unpaid_work * df_ref_prices$Referentieprijs[df_ref_prices$Eenheid == "Vervangingskosten per uur"] * diff_this_prior_consider_recall
 
-dat
+dat <-  data.frame(dat)
+
+return(dat)
 }
 
 
