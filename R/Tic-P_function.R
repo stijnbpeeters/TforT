@@ -1,4 +1,4 @@
-#All costprices following the costing manual excluding medication'
+#' All costprices following the costing manual excluding medication'
 
 func_ticP <- function(dat, reference_year){
 
