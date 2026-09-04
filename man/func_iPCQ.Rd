@@ -4,7 +4,21 @@
 \alias{func_iPCQ}
 \title{All costprices following the costing manual}
 \usage{
-func_iPCQ(dat, recall_weeks, reference_year, yeardays = 365.25)
+func_iPCQ(
+  dat,
+  recall_weeks,
+  reference_year,
+  currency = "EUR",
+  yeardays = 365.25
+)
+}
+\arguments{
+\item{dat}{A data frame containing the required iPCQ columns.}
+\item{recall_weeks}{Target period in weeks.}
+\item{reference_year}{Year used to select Dutch reference prices.}
+\item{currency}{Currency label. Use \code{"EUR"} or \code{"INT$"} for Dutch
+prices from \code{tatooheene}; custom labels require custom hourly prices.}
+\item{yeardays}{Deprecated and ignored.}
 }
 \description{
 All costprices following the costing manual

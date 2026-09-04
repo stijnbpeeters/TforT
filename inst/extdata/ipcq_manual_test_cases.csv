@@ -1,0 +1,9 @@
+scenario,date_of_this_measurement,hours_work_week,days_work_week,days_sick,sick_longer_than_4_weeks,date_start_sickness,days_suffering_from_problems,rate_of_work,days_less_unpaid_work,average_hours_unpaid_work,input_period_weeks,target_period_weeks,paid_work_hour_price,unpaid_work_hour_price,friction_period_days,expected_absenteeism_short_hours,expected_absenteeism_long_hours,expected_presenteeism_hours,expected_unpaid_work_hours,expected_absenteeism_short_costs,expected_absenteeism_long_costs,expected_presenteeism_costs,expected_unpaid_work_costs,expected_total_productivity_costs
+no_productivity_loss,2024-04-01,40,5,0,0,,0,10,0,0,4,4,10,5,84,0,0,0,0,0,0,0,0,0
+two_short_absence_days,2024-04-01,40,5,2,0,,0,10,0,0,4,4,10,5,84,16,0,0,0,160,0,0,0,160
+combined_projected_to_12_weeks,2024-04-01,40,5,2,0,,3,5,2,3,4,12,10,5,84,48,0,36,18,480,0,360,90,930
+long_absence_28_day_friction,2024-04-01,40,5,0,1,2024-02-05,0,10,0,0,4,12,10,5,28,0,160,0,0,0,1600,0,0,1600
+long_absence_42_day_friction,2024-04-01,40,5,0,1,2024-02-05,0,10,0,0,4,12,10,5,42,0,240,0,0,0,2400,0,0,2400
+long_absence_84_day_friction,2024-04-01,40,5,0,1,2024-02-05,0,10,0,0,4,12,10,5,84,0,320,0,0,0,3200,0,0,3200
+friction_partly_inside_period,2024-04-01,40,5,0,1,2023-12-18,0,10,0,0,4,12,10,5,42,0,120,0,0,0,1200,0,0,1200
+friction_ended_before_period,2024-04-01,40,5,0,1,2023-10-02,0,10,0,0,4,12,10,5,28,0,0,0,0,0,0,0,0,0

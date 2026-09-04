@@ -2,3 +2,6 @@
 
 export(func_iMCQ)
 export(func_iPCQ)
+export(calculate_ipcq)
+export(ipcq_input_spec)
+export(run_ipcq_app)

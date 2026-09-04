@@ -1,2 +1,10 @@
 ^TforT\.Rproj$
 ^\.Rproj\.user$
+^\.Rhistory$
+^R/\.RData$
+^R/\.Rhistory$
+^R/data\.xlsx$
+^R/data/example_data\.xlsx$
+^R/Test script\.R$
+^R/www$
+^iPCQ$

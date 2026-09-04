@@ -1,0 +1,2 @@
+participant_id,date_of_this_measurement,hours_work_week,days_work_week,days_sick,sick_longer_than_4_weeks,date_start_sickness,days_suffering_from_problems,rate_of_work,days_less_unpaid_work,average_hours_unpaid_work
+P001,2024-04-01,40,5,2,0,,3,8,1,2

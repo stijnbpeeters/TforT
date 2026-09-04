@@ -1,0 +1,72 @@
+---
+title: "Using the iPCQ Shiny calculator"
+author: "Stijn Peeters"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using the iPCQ Shiny calculator}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+# Start the application
+
+Install and load TforT, then run:
+
+```{r, eval=FALSE}
+library(TforT)
+run_ipcq_app()
+```
+
+# Prepare a file
+
+The app accepts CSV, XLSX, and RDS data frames. Click **Download input
+template** in the app for the correct headers. Each row is one participant and
+measurement. Extra columns are retained.
+
+Dates should use `YYYY-MM-DD`. Leave `date_start_sickness` empty only when
+`sick_longer_than_4_weeks` is zero. Do not upload names, addresses, contact
+information, or other directly identifying information.
+
+# Choose calculation settings
+
+1. Set the number of weeks represented by the answers. Standard iPCQ responses
+   normally represent four weeks.
+2. Set the target period. A longer target period projects short absence,
+   presenteeism, and unpaid work using the ratio of target to input weeks.
+3. Select a reference year.
+4. Choose Dutch reference prices or custom prices.
+5. Choose the Dutch friction period or provide a custom number of calendar days.
+6. Click **Calculate costs**.
+
+# Price options
+
+With **Dutch reference prices**, select either EUR or INT$. The app obtains paid
+and unpaid hourly prices from `tatooheene`.
+
+With **Provide my own prices**, enter a currency label and both hourly prices.
+For non-Dutch settings, normally also select **Provide my own period** and enter
+the relevant national friction period.
+
+# Review and download
+
+The **Results** tab contains original variables and calculated components. The
+**Calculation settings** tab records prices, currency, friction period, sources,
+and the projection factor. Export the result as CSV, Excel, or RDS.
+
+# Interpreting errors
+
+The app reports missing columns, invalid dates, negative values, impossible
+numbers of working days, missing long-absence dates, and unsupported price
+combinations. Correct the source file and upload it again; calculations never
+alter the original uploaded file.
+
+# Reproducibility
+
+Archive the result together with the original input, package version,
+questionnaire version, selected price year, currency, and source of custom
+assumptions. Projection beyond the questionnaire's observed period should be
+reported as an analytical assumption.
